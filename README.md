@@ -10,6 +10,8 @@ I've included a grafana basic dashboard to visualize the data.
 ![Grafana Dashboard](https://github.com/brendanbank/unifi_lte_collector/blob/d501a64103d3b8955e968e930b99d7b57abf2463/dashboard.png)
 
 
+
+## configuration
 The script will look for the authentication credentials in a "**.env**" file in the directory where
 the script is placed.
 
