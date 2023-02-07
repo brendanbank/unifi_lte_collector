@@ -82,7 +82,7 @@ def main():
         try:
             r_data = http_session.get(device_url, cookies=cookie, verify=False, timeout=TIMEOUT)
         except Exception as e:
-            log.critical(f'could not connect to {device_url}: f{e}')
+            log.critical(f'could not connect to {device_url}: {e}')
             time.sleep(FREQ)
             continue
         
