@@ -151,3 +151,4 @@ gauge_all*db
 mysql
 .pydevproject
 .settings
+Pipfile.lock
