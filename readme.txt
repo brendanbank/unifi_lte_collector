@@ -1,10 +1,12 @@
-This script will collect data from a unifi controller (udm/udr) that has a U-LTE-Pro
+The script will collect data from a unifi controller (udm/udr) that has a U-LTE-Pro
 with connected to it. It will read the stats from the controller device api. It will 
 look for the device type ULTEPEU or ULTEUS and pushes the data in a prometheus format
 to collection by the prometheus data collector.
 
 It will look for the authentication credentials in a ".env" file in the directory where
 the script is placed.
+
+I've included a grafana basic dashboard to visualize the data.
 
 You can configure the following variables.
 
