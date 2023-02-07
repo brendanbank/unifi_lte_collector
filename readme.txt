@@ -1,8 +1,9 @@
-This script will collect data from a unifi controller (udm/udr) and read the stats 
-from the controller device api. It will look for the device type ULTEPEU and pushes
-the data in a prometheus format to collection by the prometheus data collector.
+This script will collect data from a unifi controller (udm/udr) that has a U-LTE-Pro
+connected to it. It will read the stats  from the controller device api. It will look 
+for the device type ULTEPEU and pushes the data in a prometheus format to collection by
+the prometheus data collector.
 
-It will look for the authenticaion creditials in a .env file in the directory where
+It will look for the authentication credentials in a ".env" file in the directory where
 the script is placed.
 
 You can configure the following variables.
@@ -19,8 +20,6 @@ FREQ = polling frequency, default is 30 (seconds)
 The output the command below should look something like this 
 
 srv:~$ curl localhost:9013
-
-
 # HELP unifi_lte_info LTE info
 # TYPE unifi_lte_info gauge
 unifi_lte_info{_id="<blanked>",ip="<blanked>",license_state="registered",lte_band="eutran-1",lte_cell_id="<blanked>",lte_connected="yes",lte_iccid="<blanked>",lte_imei="<blanked>",lte_ip="<blanked>",lte_mode="LTE",lte_networkoperator="<blanked>",lte_pdptype="IPV4",lte_radio="home",lte_radio_mode="LTE",lte_rat="LTE",lte_signal="Good signal strength (3)",mac="<blanked>",model="ULTEPEU",name="U-LTE-Pro",version="6.2.52.14128"} 1.0
