@@ -124,7 +124,7 @@ def main():
         j_data = r_data.json()
         
         for data in j_data['data']:
-            if data['model'] == "ULTEPEU":
+            if data['model'] == "ULTEPEU" or data['model']=="ULTEUS":
                 lte_data['name'] = data['name']
                 lte_data['model'] = data['model']
                 lte_data['id'] = data['_id']
