@@ -152,3 +152,4 @@ mysql
 .pydevproject
 .settings
 Pipfile.lock
+.env
