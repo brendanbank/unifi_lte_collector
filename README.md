@@ -10,6 +10,8 @@ the script is placed.
 
 I've included a grafana basic dashboard to visualize the data.
 
+![Grafana Dashboard](https://github.com/brendanbank/unifi_lte_collector/blob/d501a64103d3b8955e968e930b99d7b57abf2463/dashboard.png)
+
 You can configure the following variables.
 
 	HOSTNAME=<the hostname of the collector>
