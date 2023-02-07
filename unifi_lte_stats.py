@@ -18,9 +18,6 @@ log = logging.getLogger(path.basename(__file__))
 logging.basicConfig(format='%(name)s.%(funcName)s(%(lineno)s): %(message)s', stream=sys.stderr, level=logging.INFO)
 
 """ Set defaults """
-HOSTNAME = environ.get('HOSTNAME')
-USERNAME = environ.get('USERNAME')
-PASSWORD = environ.get('PASSWORD')
 PORT = environ.get('PORT', 9013)
 FREQ = environ.get('FREQ', 30)
 
@@ -30,6 +27,12 @@ try:
 except Exception as e:
     log.critical(f'could not set PORT to "{PORT}" or FREQ to "{FREQ}: {e}"')
     exit(1)
+
+""" get authentication credentials from .env file"""
+
+HOSTNAME = environ.get('HOSTNAME')
+USERNAME = environ.get('USERNAME')
+PASSWORD = environ.get('PASSWORD')
 
 for i in ['USERNAME', 'PASSWORD', 'HOSTNAME']:
     if not environ.get(i):
@@ -121,6 +124,9 @@ def main():
         j_data = r_data.json()
         
         for data in j_data['data']:
+            
+            """Only pull data from ULTEPEU or ULTEUS device types"""
+            
             if data['model'] == "ULTEPEU" or data['model'] == "ULTEUS":
                 lte_data['name'] = data['name']
                 lte_data['model'] = data['model']
@@ -136,9 +142,11 @@ def main():
                 for i in stats_text:
                     lte_data['info'][i] = data[i]
 
+        """Fill unifi_lte_info with details"""
         lte_info.info(lte_data['info'])
         log.debug(f'fill info with {lte_data["info"]}')
         
+        """Fill unifi_* stats """
         for k in lte_stats.keys():
             lte_stats[k].labels(lte_data['id'], lte_data['name'], lte_data['model']).set(lte_data['stats'][k])
             log.debug(f'set {k} to  {lte_data["stats"][k]}')
@@ -146,10 +154,8 @@ def main():
         log.debug(f'generate_latest')
         log.debug(generate_latest(registry=registry).decode("ascii"))
             
-        time.sleep (30)
+        time.sleep (FREQ)
             
-    else:
-        print (f"cannot login: {r.status_code}")
             
             
 if __name__ == "__main__":
