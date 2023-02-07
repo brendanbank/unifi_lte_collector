@@ -9,15 +9,13 @@ urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 from os import environ, path
 from dotenv import load_dotenv
 
-
 basedir = path.abspath(path.dirname(__file__))
 load_dotenv(path.join(basedir, '.env'))
-
 
 import logging, sys
 log = logging.getLogger(path.basename(__file__))
 
-logging.basicConfig(format='%(name)s.%(funcName)s(%(lineno)s): %(message)s',stream=sys.stderr,level=logging.INFO)
+logging.basicConfig(format='%(name)s.%(funcName)s(%(lineno)s): %(message)s', stream=sys.stderr, level=logging.INFO)
 
 """ Set defaults """
 HOSTNAME = environ.get('HOSTNAME')
@@ -40,6 +38,7 @@ for i in ['USERNAME', 'PASSWORD', 'HOSTNAME']:
 
 TIMEOUT = 5
 
+
 def main():
     
     """ Set variables """
@@ -49,7 +48,6 @@ def main():
     password = PASSWORD
     Headers = {'Content-type': 'application/json'} 
     device_url = f"https://{HOSTNAME}/proxy/network/api/s/default/stat/device"
-    
 
     """ Create a prometheus_client registry and http session"""
     
@@ -64,18 +62,17 @@ def main():
     lte_stats = {}
     
     for i in stats:
-        lte_stats[i] = Gauge('unifi_' + i,i,labelnames=['id', 'name', 'model'], registry=registry)
+        lte_stats[i] = Gauge('unifi_' + i, i, labelnames=['id', 'name', 'model'], registry=registry)
     
-    
-    stats_text = ['lte_connected', 'lte_imei', 'lte_iccid', 'lte_radio', 'lte_ip', 'lte_networkoperator', 'lte_pdptype',\
-                   'lte_rat', 'lte_signal', 'lte_mode', 'lte_band','lte_cell_id', 'lte_radio_mode', \
+    stats_text = ['lte_connected', 'lte_imei', 'lte_iccid', 'lte_radio', 'lte_ip', 'lte_networkoperator', 'lte_pdptype', \
+                   'lte_rat', 'lte_signal', 'lte_mode', 'lte_band', 'lte_cell_id', 'lte_radio_mode', \
                    'model', 'name', 'ip', 'mac', 'version', 'license_state', '_id' ]
     
     lte_data = {}
 
     """ create prometheus server """
 
-    start_http_server(PORT,registry=registry)
+    start_http_server(PORT, registry=registry)
     
     cookie = None
                           
@@ -124,7 +121,7 @@ def main():
         j_data = r_data.json()
         
         for data in j_data['data']:
-            if data['model'] == "ULTEPEU" or data['model']=="ULTEUS":
+            if data['model'] == "ULTEPEU" or data['model'] == "ULTEUS":
                 lte_data['name'] = data['name']
                 lte_data['model'] = data['model']
                 lte_data['id'] = data['_id']
@@ -138,7 +135,6 @@ def main():
                 lte_data['info'] = {}
                 for i in stats_text:
                     lte_data['info'][i] = data[i]
-
 
         lte_info.info(lte_data['info'])
         log.debug(f'fill info with {lte_data["info"]}')
