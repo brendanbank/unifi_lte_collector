@@ -1,6 +1,6 @@
 # unifi_lte_stats.py
 
-The script (alfa version) will collect data from a unifi controller (udm/udr) that has a U-LTE-Pro
+The script (alpha version) will collect data from a unifi controller (udm/udr) that has a U-LTE-Pro
 with connected to it. It will read the stats from the controller device api. It will 
 look for the device type "ULTEPEU" or "ULTEUS" and pushes the data in a prometheus
 format to collection by the prometheus data collector.
