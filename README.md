@@ -5,9 +5,9 @@ with connected to it. It will read the stats from the controller device api. It 
 look for the device type "ULTEPEU" or "ULTEUS" and pushes the data in a prometheus
 format to collection by the prometheus data collector.
 
-I've included a [grafana basic dashboard](https://github.com/brendanbank/unifi_lte_collector/blob/535634d53950fa61d90f18b3e08fb6e615d0eaff/dashboard.json) to visualize the data. 
+I've included a [grafana basic dashboard](https://github.com/brendanbank/unifi_lte_collector/blob/535634d53950fa61d90f18b3e08fb6e615d0eaff/dashboard.json?raw=true) to visualize the data. 
 
-![Grafana Dashboard](https://github.com/brendanbank/unifi_lte_collector/blob/d501a64103d3b8955e968e930b99d7b57abf2463/dashboard.png)
+![Grafana Dashboard](https://github.com/brendanbank/unifi_lte_collector/blob/d501a64103d3b8955e968e930b99d7b57abf2463/dashboard.png?raw=true)
 
 
 
