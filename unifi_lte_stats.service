@@ -5,7 +5,7 @@ After=network.target
 [Service]
 User=root
 Restart=always
-ExecStart=/usr/local/unifi_lte_collector/unifi_lte_stats.py.py
+ExecStart=/usr/local/unifi_lte_collector/unifi_lte_stats.py
 Type=simple
 Environment="PYTHONUNBUFFERED=1"
 
