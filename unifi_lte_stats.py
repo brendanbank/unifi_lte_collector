@@ -140,7 +140,8 @@ def main():
 
                 lte_data['info'] = {}
                 for i in stats_text:
-                    lte_data['info'][i] = data[i]
+                    if i in data:
+                        lte_data['info'][i] = data[i]
 
         """Fill unifi_lte_info with details"""
         lte_info.info(lte_data['info'])
