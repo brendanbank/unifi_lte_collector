@@ -149,6 +149,10 @@ def main():
         
         """Fill unifi_* stats """
         for k in lte_stats.keys():
+            if not (k in lte_data['stats']):
+                log.info (f'element {k} not in data set')
+                continue
+            
             lte_stats[k].labels(lte_data['id'], lte_data['name'], lte_data['model']).set(lte_data['stats'][k])
             log.debug(f'set {k} to  {lte_data["stats"][k]}')
             
