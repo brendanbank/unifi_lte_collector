@@ -224,13 +224,13 @@ USAGE''' % (program_shortdesc, str(__date__))
                 continue
 
             if (r.status_code == 200):
-                log.info(f'login was successful on {login_url}')
+                log.critical(f'login was successful on {login_url}')
                 cookie = r.cookies
                 
             else:
                 log.critical(f'Could not fetch: http status code: {r.status_code}, sleep for 60 sec')
                 time.sleep(60)
-                log.debug(f'sleep 60')
+                log.critical(f'sleep 60')
             continue
 
         
