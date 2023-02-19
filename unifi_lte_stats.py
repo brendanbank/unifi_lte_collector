@@ -9,6 +9,7 @@ from prometheus_client import Info, generate_latest, Gauge, start_http_server
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 from os import environ, path
 from dotenv import load_dotenv
+import pprint
 
 basedir = path.abspath(path.dirname(__file__))
 load_dotenv(path.join(basedir, '.env'))
@@ -61,7 +62,7 @@ def main():
     """ create prometheus_client items """
     lte_info = Info('unifi_lte', 'LTE info', registry=registry)
 
-    stats = ['lte_rx_chan', 'lte_tx_chan', 'lte_rssi', 'lte_rsrq', 'lte_rsrp', 'total_tx_bytes', 'total_rx_bytes', 'lte_signal']
+    stats = ['lte_rx_chan', 'lte_tx_chan', 'lte_rssi', 'lte_rsrq', 'lte_rsrp', 'total_tx_bytes', 'total_rx_bytes', 'lte_signal','lte_failover', 'uptime']
     
     lte_stats = {}
     
@@ -70,7 +71,8 @@ def main():
     
     stats_text = ['lte_connected', 'lte_imei', 'lte_iccid', 'lte_radio', 'lte_ip', 'lte_networkoperator', 'lte_pdptype', \
                    'lte_rat', 'lte_signal', 'lte_mode', 'lte_band', 'lte_cell_id', 'lte_radio_mode', \
-                   'model', 'name', 'ip', 'mac', 'version', 'license_state', '_id' ]
+                   'model', 'name', 'ip', 'mac', 'version', 'license_state', '_id', 'serial',
+                   'displayable_version','lte_state','lte_ext_ant', 'lte_connected' ]
     
     lte_data = {}
 
@@ -80,6 +82,8 @@ def main():
     
     cookie = None
                           
+    pp = pprint.PrettyPrinter(indent=4)
+    
     while True:
         
         """ try to fetch data, this fill fail on the first run """
@@ -129,6 +133,12 @@ def main():
             """Only pull data from ULTEPEU or ULTEUS device types"""
             
             if data['model'] == "ULTEPEU" or data['model'] == "ULTEUS":
+                
+                
+                # log.debug(pp.pprint(data))
+
+                
+                
                 lte_data['name'] = data['name']
                 lte_data['model'] = data['model']
                 lte_data['id'] = data['_id']
@@ -157,12 +167,19 @@ def main():
             if k == 'lte_signal':
                 signal = re.search(r'\d', lte_data['stats'][k])
                 lte_stats[k].labels(lte_data['id'], lte_data['name'], lte_data['model']).set(signal.group())
-                continue
-            
-            lte_stats[k].labels(lte_data['id'], lte_data['name'], lte_data['model']).set(lte_data['stats'][k])
+
+            elif  k == 'lte_failover':
+                if lte_data['stats'][k]:
+                    lte_stats[k].labels(lte_data['id'], lte_data['name'], lte_data['model']).set(1)
+                else:
+                    lte_stats[k].labels(lte_data['id'], lte_data['name'], lte_data['model']).set(0)
+            else:            
+                lte_stats[k].labels(lte_data['id'], lte_data['name'], lte_data['model']).set(lte_data['stats'][k])
+                
             log.debug(f'set {k} to  {lte_data["stats"][k]}')
             
         log.debug(f'generate_latest')
+        
         log.debug(generate_latest(registry=registry).decode("ascii"))
             
         time.sleep (FREQ)
