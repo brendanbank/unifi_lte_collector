@@ -124,7 +124,7 @@ USAGE''' % (program_shortdesc, str(__date__))
     
     parser.add_argument('hostname', type=str, help='Hostname to poll')
 
-    parser.add_argument('-u,', '--username', type=str, dest="priv_username",
+    parser.add_argument('-u', '--username', type=str, dest="priv_username",
                         default="nobody",
                         help="Run the exporter as a specific user drop. " + 
                         "The exporter must be started as root to enable this. [default: %(default)s]")
