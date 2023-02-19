@@ -5,7 +5,8 @@ After=network.target
 [Service]
 User=root
 Restart=always
-ExecStart=/usr/local/unifi_lte_collector/unifi_lte_stats.py
+EnvironmentFile=-/etc/default/unifi_lte_stats.defaults
+ExecStart=/usr/local/unifi_lte_collector/unifi_lte_stats.py $UNIFI_LTE_EXPORTER_OPTIONS
 Type=simple
 Environment="PYTHONUNBUFFERED=1"
 
