@@ -2,6 +2,7 @@
 
 import requests 
 import urllib3
+import re
 import time
 import prometheus_client
 from prometheus_client import Info, generate_latest, Gauge, start_http_server
@@ -15,7 +16,7 @@ load_dotenv(path.join(basedir, '.env'))
 import logging, sys
 log = logging.getLogger(path.basename(__file__))
 
-logging.basicConfig(format='%(name)s.%(funcName)s(%(lineno)s): %(message)s', stream=sys.stderr, level=logging.INFO)
+logging.basicConfig(format='%(name)s.%(funcName)s(%(lineno)s): %(message)s', stream=sys.stderr, level=logging.DEBUG)
 
 """ Set defaults """
 PORT = environ.get('PORT', 9013)
@@ -60,7 +61,7 @@ def main():
     """ create prometheus_client items """
     lte_info = Info('unifi_lte', 'LTE info', registry=registry)
 
-    stats = ['lte_rx_chan', 'lte_tx_chan', 'lte_rssi', 'lte_rsrq', 'lte_rsrp', 'total_tx_bytes', 'total_rx_bytes']
+    stats = ['lte_rx_chan', 'lte_tx_chan', 'lte_rssi', 'lte_rsrq', 'lte_rsrp', 'total_tx_bytes', 'total_rx_bytes', 'lte_signal']
     
     lte_stats = {}
     
@@ -135,7 +136,7 @@ def main():
                 for i in stats:
                     if not (i in data):
                         continue
-                    
+                                        
                     lte_data['stats'][i] = data[i]
 
                 lte_data['info'] = {}
@@ -151,6 +152,11 @@ def main():
         for k in lte_stats.keys():
             if not (k in lte_data['stats']):
                 log.info (f'element {k} not in data set')
+                continue
+            
+            if k == 'lte_signal':
+                signal = re.search(r'\d', lte_data['stats'][k])
+                lte_stats[k].labels(lte_data['id'], lte_data['name'], lte_data['model']).set(signal.group())
                 continue
             
             lte_stats[k].labels(lte_data['id'], lte_data['name'], lte_data['model']).set(lte_data['stats'][k])
