@@ -16,7 +16,7 @@ load_dotenv(path.join(basedir, '.env'))
 import logging, sys
 log = logging.getLogger(path.basename(__file__))
 
-logging.basicConfig(format='%(name)s.%(funcName)s(%(lineno)s): %(message)s', stream=sys.stderr, level=logging.DEBUG)
+logging.basicConfig(format='%(name)s.%(funcName)s(%(lineno)s): %(message)s', stream=sys.stderr, level=logging.INFO)
 
 """ Set defaults """
 PORT = environ.get('PORT', 9013)
