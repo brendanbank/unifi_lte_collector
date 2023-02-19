@@ -1,4 +1,53 @@
 #!/usr/bin/env python3
+'''
+unifi_lte_stats.py -- Exporter for unifi U-LTE-Pro devices 
+
+unifi_lte_stats.py is a data exporter for Prometheus
+
+@author:     Brendan Bank
+
+@copyright:  2023 Brendan Bank. All rights reserved.
+
+@license:    BSDv3
+
+@contact:    brendan.bank ... gmail.com
+@deffield    updated: Updated
+'''
+
+'''
+Copyright 2023 Brendan Bank
+
+Redistribution and use in source and binary forms, with or without modification,
+are permitted provided that the following conditions are met:
+
+1. Redistributions of source code must retain the above copyright notice, this
+list of conditions and the following disclaimer.
+
+2. Redistributions in binary form must reproduce the above copyright notice,
+this list of conditions and the following disclaimer in the documentation and/or
+other materials provided with the distribution.
+
+3. Neither the name of the copyright holder nor the names of its contributors
+may be used to endorse or promote products derived from this software without
+specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR
+ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+(INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
+ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+'''
+
+__all__ = []
+__version__ = 0.2
+__date__ = '2023-01-10'
+__updated__ = '2023-01-20'
+
 
 import requests 
 import urllib3
@@ -10,49 +59,98 @@ urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 from os import environ, path
 from dotenv import load_dotenv
 import pprint
+import argparse
 
-basedir = path.abspath(path.dirname(__file__))
-load_dotenv(path.join(basedir, '.env'))
+
+ENV = '.env'
+
 
 import logging, sys
 log = logging.getLogger(path.basename(__file__))
 
-logging.basicConfig(format='%(name)s.%(funcName)s(%(lineno)s): %(message)s', stream=sys.stderr, level=logging.INFO)
-
-""" Set defaults """
-PORT = environ.get('PORT', 9013)
-FREQ = environ.get('FREQ', 30)
-
-try:
-    PORT = int(PORT)
-    FREQ = int(FREQ)
-except Exception as e:
-    log.critical(f'could not set PORT to "{PORT}" or FREQ to "{FREQ}: {e}"')
-    exit(1)
+logging.basicConfig(format='%(name)s.%(funcName)s(%(lineno)s): %(message)s', stream=sys.stderr, level=logging.WARN)
 
 """ get authentication credentials from .env file"""
 
-HOSTNAME = environ.get('HOSTNAME')
-USERNAME = environ.get('USERNAME')
-PASSWORD = environ.get('PASSWORD')
-
-for i in ['USERNAME', 'PASSWORD', 'HOSTNAME']:
-    if not environ.get(i):
-        log.critical(f'{i} is not set ')
-        exit(1)
 
 TIMEOUT = 5
+POLL_INTERVAL = 20
+EXPORTER_PORT = environ.get('PORT', 9013)
 
 
 def main():
-    
+
+    '''main function.'''
+
+    program_name = path.basename(sys.argv[0])
+    program_version = "v%s" % __version__
+    program_build_date = str(__updated__)
+    program_version_message = '%%(prog)s %s (%s)' % (program_version, program_build_date)
+    program_shortdesc = __import__('__main__').__doc__.split("\n")[1]
+    program_license = '''%s
+
+  Created by Brendan Bank on %s.
+  Copyright 2023 Brendan Bank. All rights reserved.
+
+  Licensed under the BSD-3-Clause
+  https://opensource.org/licenses/BSD-3-Clause
+
+  Distributed on an "AS IS" basis without warranties
+  or conditions of any kind, either express or implied.
+
+USAGE''' % (program_shortdesc, str(__date__))
+
     """ Set variables """
+
+    # Setup argument parser
+    parser = argparse.ArgumentParser(description=program_license, formatter_class=argparse.RawDescriptionHelpFormatter)
+
+    parser.add_argument("-v", "--verbose", dest="verbose", action="store_true", default=False,
+                         help="set verbosity [default: %(default)s]")
     
-    login_url = f"https://{HOSTNAME}/api/auth/login"
-    username = USERNAME
-    password = PASSWORD
+    parser.add_argument('-V', '--version', action='version', version=program_version_message)
+    
+    parser.add_argument('-d', '--debug', action='store_true', dest="debug", default=False,
+                        help="set debug [default: %(default)s]")
+    
+    parser.add_argument('-E', '--exporter-port', type=int, dest="exporter_port", default=EXPORTER_PORT,
+                        help="set TCP Port for the exporter server [default: %(default)s]")
+
+    parser.add_argument('-i', '--interval', type=int, dest="interval", default=POLL_INTERVAL,
+                        help="Poll interval [default: %(default)s] seconds")
+
+    parser.add_argument('-e', '--environment', type=argparse.FileType('r'), dest="environment_file", default=ENV,
+                        help="enviroment file to read from  [default: %(default)s] seconds")
+    
+    parser.add_argument('hostname', type=str, help='Hostname to poll')
+
+
+
+    # Process arguments
+    args = parser.parse_args()
+    
+    if (args.debug):
+        log.setLevel(level=logging.DEBUG)
+    elif (args.verbose):
+        log.setLevel(level=logging.INFO)
+
+    basedir = path.abspath(path.dirname(__file__))
+    envpath = path.join(basedir, args.environment_file.name)
+    
+    load_dotenv(envpath)
+
+    USERNAME = environ.get('USERNAME')
+    PASSWORD = environ.get('PASSWORD')
+    
+    for i in ['USERNAME', 'PASSWORD']:
+        if not environ.get(i):
+            log.critical(f'{i} is not set ')
+            exit(1)
+
+
+    login_url = f"https://{args.hostname}/api/auth/login"
     Headers = {'Content-type': 'application/json'} 
-    device_url = f"https://{HOSTNAME}/proxy/network/api/s/default/stat/device"
+    device_url = f"https://{args.hostname}/proxy/network/api/s/default/stat/device"
 
     """ Create a prometheus_client registry and http session"""
     
@@ -72,13 +170,13 @@ def main():
     stats_text = ['lte_connected', 'lte_imei', 'lte_iccid', 'lte_radio', 'lte_ip', 'lte_networkoperator', 'lte_pdptype', \
                    'lte_rat', 'lte_signal', 'lte_mode', 'lte_band', 'lte_cell_id', 'lte_radio_mode', \
                    'model', 'name', 'ip', 'mac', 'version', 'license_state', '_id', 'serial',
-                   'displayable_version','lte_state','lte_ext_ant', 'lte_connected' ]
+                   'displayable_version','lte_state','lte_ext_ant', 'lte_connected', 'ip' ]
     
     lte_data = {}
 
     """ create prometheus server """
 
-    start_http_server(PORT, registry=registry)
+    start_http_server(EXPORTER_PORT, registry=registry)
     
     cookie = None
                           
@@ -91,14 +189,16 @@ def main():
             r_data = http_session.get(device_url, cookies=cookie, verify=False, timeout=TIMEOUT)
         except Exception as e:
             log.critical(f'could not connect to {device_url}: {e}')
-            time.sleep(FREQ)
+            time.sleep(POLL_INTERVAL)
+            log.debug(f'sleep {POLL_INTERVAL}')
+
             continue
         
         if (r_data.status_code != 200):
             """ try to authenticate """
             
             log.critical(f'Could not fetch {device_url}: http status code: {r_data.status_code}')
-            data = {'username': username, 'password': password }
+            data = {'username': USERNAME, 'password': PASSWORD }
 
             log.info(f'try to fetch cookie from: {login_url}')
             
@@ -111,7 +211,8 @@ def main():
                             )
             except Exception as e:
                 log.critical(f'could not connect to {login_url}: f{e}')
-                time.sleep(FREQ)
+                time.sleep(POLL_INTERVAL)
+                log.debug(f'sleep {POLL_INTERVAL}')
                 continue
 
             if (r.status_code == 200):
@@ -121,10 +222,10 @@ def main():
             else:
                 log.critical(f'Could not fetch: http status code: {r.status_code}, sleep for 60 sec')
                 time.sleep(60)
-                
+                log.debug(f'sleep 60')
             continue
 
-        log.info(f'Fetched data from {device_url}')
+        
 
         j_data = r_data.json()
         
@@ -135,7 +236,8 @@ def main():
             if data['model'] == "ULTEPEU" or data['model'] == "ULTEUS":
                 
                 
-                # log.debug(pp.pprint(data))
+                log.debug('ULTE found')
+                log.debug(pp.pformat(data))
 
                 
                 
@@ -179,10 +281,12 @@ def main():
             log.debug(f'set {k} to  {lte_data["stats"][k]}')
             
         log.debug(f'generate_latest')
-        
         log.debug(generate_latest(registry=registry).decode("ascii"))
+        log.debug(f'sleep {POLL_INTERVAL}')
+        if 'lte_signal' in lte_data['stats'] and 'lte_rssi' in lte_data['stats']:
+            log.info(f"Fetched data from {args.hostname} signal: '{lte_data['stats']['lte_signal']}' rssi: {lte_data['stats']['lte_rssi']} sleep: {POLL_INTERVAL}s")
             
-        time.sleep (FREQ)
+        time.sleep (POLL_INTERVAL)
             
             
             
