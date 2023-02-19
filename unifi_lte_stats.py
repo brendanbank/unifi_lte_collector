@@ -56,7 +56,7 @@ import time
 import prometheus_client
 from prometheus_client import Info, generate_latest, Gauge, start_http_server
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
-from os import environ, path
+import os
 from dotenv import load_dotenv
 import pprint
 import argparse
@@ -66,7 +66,7 @@ ENV = '.env'
 
 
 import logging, sys
-log = logging.getLogger(path.basename(__file__))
+log = logging.getLogger(os.path.basename(__file__))
 
 logging.basicConfig(format='%(name)s.%(funcName)s(%(lineno)s): %(message)s', stream=sys.stderr, level=logging.WARN)
 
@@ -75,14 +75,14 @@ logging.basicConfig(format='%(name)s.%(funcName)s(%(lineno)s): %(message)s', str
 
 TIMEOUT = 5
 POLL_INTERVAL = 20
-EXPORTER_PORT = environ.get('PORT', 9013)
+EXPORTER_PORT = os.environ.get('PORT', 9013)
 
 
 def main():
 
     '''main function.'''
 
-    program_name = path.basename(sys.argv[0])
+    program_name = os.path.basename(sys.argv[0])
     program_version = "v%s" % __version__
     program_build_date = str(__updated__)
     program_version_message = '%%(prog)s %s (%s)' % (program_version, program_build_date)
@@ -134,16 +134,16 @@ USAGE''' % (program_shortdesc, str(__date__))
     elif (args.verbose):
         log.setLevel(level=logging.INFO)
 
-    basedir = path.abspath(path.dirname(__file__))
-    envpath = path.join(basedir, args.environment_file.name)
+    basedir = os.path.abspath(os.path.dirname(__file__))
+    envpath = os.path.join(basedir, args.environment_file.name)
     
     load_dotenv(envpath)
 
-    USERNAME = environ.get('USERNAME')
-    PASSWORD = environ.get('PASSWORD')
+    USERNAME = os.environ.get('USERNAME')
+    PASSWORD = os.environ.get('PASSWORD')
     
     for i in ['USERNAME', 'PASSWORD']:
-        if not environ.get(i):
+        if not os.environ.get(i):
             log.critical(f'{i} is not set ')
             exit(1)
 
@@ -175,6 +175,8 @@ USAGE''' % (program_shortdesc, str(__date__))
     lte_data = {}
 
     """ create prometheus server """
+    
+    drop_privileges()
 
     start_http_server(EXPORTER_PORT, registry=registry)
     
@@ -289,7 +291,36 @@ USAGE''' % (program_shortdesc, str(__date__))
         time.sleep (POLL_INTERVAL)
             
             
-            
+def drop_privileges(uid_name='nobody', gid_name='nogroup'):
+    if os.getuid() != 0:
+        # We're not root so, like, whatever dude
+        return
+
+    log.warning(f'Dropping privileges to user {uid_name} and group {gid_name}')
+    
+    # Get the uid/gid from the name
+    try:
+        running_uid = pwd.getpwnam(uid_name).pw_uid
+    except Exception as e:
+        log.critical(f'cannot find username {uid_name}: {e}')
+        exit()
+
+    try:
+        running_gid = grp.getgrnam(gid_name).gr_gid
+    except Exception as e:
+        log.critical(f'cannot find groupname {gid_name}: {e}')
+        exit()
+ 
+    # Remove group privileges
+    os.setgroups([])
+ 
+    # Try setting the new uid/gid
+    os.setgid(running_gid)
+    os.setuid(running_uid)
+ 
+    # Ensure a very conservative umask
+    old_umask = os.umask(0o077)
+
 if __name__ == "__main__":
     main() 
 
